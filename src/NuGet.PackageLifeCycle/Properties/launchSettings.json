@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NuGet.PackageLifeCycle": {
+      "commandName": "Project",
+      "commandLineArgs": "deprecate"
+    }
+  }
+}
