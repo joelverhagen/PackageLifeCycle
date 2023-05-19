@@ -7,7 +7,7 @@ public class PackageLifeCycleCommand : RootCommand
 {
     public const string LogLevelOption = "--log-level";
 
-    public PackageLifeCycleCommand() : base("A CLI tool to help you manage the lifecycle of published NuGet packages. You can relist and deprecate packages.")
+    public PackageLifeCycleCommand() : base("A CLI tool to help you manage the lifecycle of published NuGet packages.")
     {
         AddGlobalOption(new Option<LogEventLevel>(
             LogLevelOption,
