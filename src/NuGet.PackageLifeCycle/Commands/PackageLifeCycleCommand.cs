@@ -14,6 +14,8 @@ public class PackageLifeCycleCommand : RootCommand
             () => LogEventLevel.Information,
             "The minimum log level to display."));
 
+        Name = "nuget-plc";
+
         AddCommand(new DeprecateCommand());
     }
 }
