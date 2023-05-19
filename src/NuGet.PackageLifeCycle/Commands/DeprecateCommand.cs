@@ -15,10 +15,10 @@ public class DeprecateCommand : Command
     public const string AlternateVersionOption = "--alternate-version";
     public const string ApiKeyOption = "--api-key";
     public const string DryRunOption = "--dry-run";
-    public const string HasCriticalBugsOption = "--has-critical-bugs";
+    public const string CriticalBugsOption = "--critical-bugs";
     public const string LegacyOption = "--legacy";
     public const string MessageOption = "--message";
-    public const string OtherOption = "--other";
+    public const string OtherReasonOption = "--other-reason";
     public const string OverwriteOption = "--overwrite";
     public const string SkipValidation = "--skip-validation";
     public const string PackagePublishUrlOption = "--package-publish-url";
@@ -43,17 +43,26 @@ public class DeprecateCommand : Command
         AddOption(new Option<bool>(AllOption, "Deprecate all versions."));
         AddOption(new Option<string>(ApiKeyOption, "The API key to use when deprecating the package."));
         AddOption(new Option<bool>(LegacyOption, "Mark the deprecated versions as legacy."));
-        AddOption(new Option<bool>(HasCriticalBugsOption, "Mark the deprecated versions as having critical bugs."));
-        AddOption(new Option<bool>(OtherOption, "Mark the deprecated versions as having some other deprecation reason. Enabled by default if no other deprecation reason is selected."));
-        AddOption(new Option<string>(MessageOption, $"A deprecation message to display. Required if {OtherOption} is specified or no other deprecation reason is selected."));
-        AddOption(new Option<string>(AlternateIdOption, "An alternate package ID to recommend instead of this package."));
-        AddOption(new Option<string>(AlternateVersionOption, $"A specific alternate package version to recommend. Only usable with {AlternateIdOption}."));
+        AddOption(new Option<bool>(CriticalBugsOption, "Mark the deprecated versions as having critical bugs."));
+        AddOption(new Option<bool>(OtherReasonOption, "Mark the deprecated versions as having some other deprecation reason. Enabled by default if no other deprecation reason is selected."));
+        AddOption(new Option<string>(MessageOption, $"A deprecation message to display. Required if {OtherReasonOption} is specified or no other deprecation reason is selected."));
+        AddOption(new Option<string>(AlternateIdOption, "An alternate package ID to recommend instead of this package.")
+        {
+            ArgumentHelpName = "id",
+        });
+        AddOption(new Option<string>(AlternateVersionOption, $"A specific alternate package version to recommend. Only usable with {AlternateIdOption}.")
+        {
+            ArgumentHelpName = "ver",
+        });
         AddOption(new Option<bool>(DryRunOption, "Runs the entire operation without actually submitting the deprecation request."));
         AddOption(new Option<bool>(OverwriteOption, "Replace existing deprecation metadata on a package version."));
         AddOption(new Option<bool>(AllowMissingVersionsOption, "Allow deprecating versions that are not yet available on the source."));
         AddOption(new Option<bool>(SkipValidation, $"Skip as much validation as possible before submitting the request."));
         AddOption(new Option<string>(SourceOption, () => "https://api.nuget.org/v3/index.json", "The package source to use."));
-        AddOption(new Option<string>(PackagePublishUrlOption, $"The URL to use for the PackagePublish resource. Defaults to discovering it from the {SourceOption} option."));
+        AddOption(new Option<string>(PackagePublishUrlOption, $"The URL to use for the PackagePublish resource. Defaults to discovering it from the {SourceOption} option.")
+        {
+            ArgumentHelpName = "url",
+        });
     }
 
     public new class Handler : ICommandHandler
@@ -68,8 +77,8 @@ public class DeprecateCommand : Command
         public List<string>? Range { get; set; }
         public string? ApiKey { get; set; }
         public bool Legacy { get; set; }
-        public bool HasCriticalBugs { get; set; }
-        public bool Other { get; set; }
+        public bool CriticalBugs { get; set; }
+        public bool OtherReason { get; set; }
         public string? Message { get; set; }
         public string? AlternateId { get; set; }
         public string? AlternateVersion { get; set; }
@@ -216,15 +225,15 @@ public class DeprecateCommand : Command
                 }
             }
 
-            if (!Legacy && !HasCriticalBugs && !Other)
+            if (!Legacy && !CriticalBugs && !OtherReason)
             {
-                Other = true;
-                _logger.LogDebug($"Defaulting to deprecation reason {OtherOption} since no other deprecation reason was provided.");
+                OtherReason = true;
+                _logger.LogDebug($"Defaulting to deprecation reason {OtherReasonOption} since no other deprecation reason was provided.");
             }
 
-            if (Other && string.IsNullOrWhiteSpace(Message))
+            if (OtherReason && string.IsNullOrWhiteSpace(Message))
             {
-                _logger.LogError($"No message was provided but deprecation reason {OtherOption} is being used.");
+                _logger.LogError($"No message was provided but deprecation reason {OtherReasonOption} is being used.");
                 return false;
             }
 
@@ -448,8 +457,8 @@ public class DeprecateCommand : Command
             {
                 Versions = versionsToDeprecate,
                 IsLegacy = Legacy ? true : null,
-                HasCriticalBugs = HasCriticalBugs ? true : null,
-                IsOther = Other ? true : null,
+                HasCriticalBugs = CriticalBugs ? true : null,
+                IsOther = OtherReason ? true : null,
                 Message = Message,
                 AlternatePackageId = AlternateId,
                 AlternatePackageVersion = AlternateVersion,

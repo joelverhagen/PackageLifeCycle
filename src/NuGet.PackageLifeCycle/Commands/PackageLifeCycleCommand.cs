@@ -12,7 +12,10 @@ public class PackageLifeCycleCommand : RootCommand
         AddGlobalOption(new Option<LogEventLevel>(
             LogLevelOption,
             () => LogEventLevel.Information,
-            "The minimum log level to display."));
+            "The minimum log level to display. Possible values: " + string.Join(", ", Enum.GetNames<LogEventLevel>()))
+        {
+            ArgumentHelpName = "level",
+        });
 
         Name = "nuget-plc";
 

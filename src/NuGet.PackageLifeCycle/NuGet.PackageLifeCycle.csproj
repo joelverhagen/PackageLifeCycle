@@ -9,7 +9,7 @@
 	
 	<PropertyGroup>
 		<PackageId>Knapcode.PackageLifeCycle</PackageId>
-		<Version>0.1.0-beta.1</Version>
+		<Version>0.1.0-beta.2</Version>
 		
 		<ToolCommandName>nuget-plc</ToolCommandName>
 		<PackAsTool>true</PackAsTool>
