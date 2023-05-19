@@ -6,7 +6,7 @@ Right now, all it does is deprecates packages using a preview "deprecate" API on
 
 ## Install
 
-```
+```console
 dotnet tool install Knapcode.PackageLifeCycle --prerelease --global
 ```
 
@@ -14,13 +14,13 @@ dotnet tool install Knapcode.PackageLifeCycle --prerelease --global
 
 ### Example
 
-```
+```console
 nuget-plc deprecate jQuery --all --legacy --api-key "o2yhehehehehe"
 ```
 
 ### Help text
 
-```
+```plaintext
 Description:
   Mark existing packages as deprecated.
 
