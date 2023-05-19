@@ -1,4 +1,4 @@
-# Knapcode.PackageLifeCycle
+# Knapcode.PackageLifeCycle (nuget-plc)
 
 A CLI tool to help you manage the lifecycle of published NuGet packages.
 
@@ -10,7 +10,11 @@ Right now, all it does is deprecates packages using a preview "deprecate" API on
 dotnet tool install Knapcode.PackageLifeCycle --prerelease --global
 ```
 
+This will install the `nuget-plc` command into your PATH.
+
 ## Deprecate
+
+This command is used to mark packages as deprecated.
 
 ### Example
 
