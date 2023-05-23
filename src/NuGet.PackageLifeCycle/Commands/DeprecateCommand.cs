@@ -249,6 +249,12 @@ public class DeprecateCommand : Command
                 return false;
             }
 
+            if (!All && (Version is null || Version.Count == 0) && (Range is null || Range.Count == 0))
+            {
+                _logger.LogError($"You must specify a {VersionOption} option, {RangeOption}, or {All} in order to select to versions to deprecate.");
+                return false;
+            }
+
             return true;
         }
 
