@@ -162,13 +162,15 @@ public class DeprecateCommand : Command
 
             if (!DryRun)
             {
-                await DeprecateAsync(versionsToDeprecate, sourceRepository, context.GetCancellationToken());
+                if (!await DeprecateAsync(versionsToDeprecate, sourceRepository, context.GetCancellationToken()))
+                {
+                    return 1;
+                }
             }
             else
             {
                 _logger.LogWarning($"The deprecation request was skipped because {DryRunOption} is enabled.");
             }
-            
 
             await LogPackageDetailsUrlAsync(versionsToDeprecate.Last(), sourceRepository);
 
