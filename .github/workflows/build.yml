@@ -1,0 +1,27 @@
+name: Build
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    - name: Pack
+      run: dotnet pack --output artifacts --no-restore --no-build --configuration Release
+    - uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-artifacts
+        path: artifacts/
