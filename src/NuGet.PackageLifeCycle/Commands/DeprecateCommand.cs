@@ -25,6 +25,8 @@ public class DeprecateCommand : Command
     public const string RangeOption = "--range";
     public const string SourceOption = "--source";
     public const string VersionOption = "--version";
+    public const string Listed = "--listed";
+    public const string Confirm = "--confirm";
 
     public DeprecateCommand() : base("deprecate", "Mark existing packages as deprecated.")
     {
@@ -63,6 +65,9 @@ public class DeprecateCommand : Command
         {
             ArgumentHelpName = "url",
         });
+        AddOption(new Option<bool?>(Listed, "Set the listed status of the versions while deprecating. Use 'false' to unlist the versions, 'true' to relist them. If the option is not provided, it defaults to not changing the listed status at all."));
+        AddOption(new Option<bool>(Confirm, "Interactively confirm the contents of the deprecation API request before proceeding."));
+
     }
 
     public new class Handler : ICommandHandler
@@ -88,6 +93,9 @@ public class DeprecateCommand : Command
         public bool SkipValidation { get; set; }
         public string Source { get; set; } = "https://api.nuget.org/v3/index.json";
         public string? PackagePublishUrl { get; set; }
+        public bool? Listed { get; set; }
+        public bool Confirm { get; set; }
+        private bool IsV3 { get; set; } = true;
 
         public Handler(DeprecationService service, ILogger<Handler> logger)
         {
@@ -117,6 +125,13 @@ public class DeprecateCommand : Command
             using var cacheContext = new SourceCacheContext { MaxAge = DateTimeOffset.Now };
             var sourceRepository = Repository.Factory.GetCoreV3(Source);
 
+            var serviceIndex = await sourceRepository.GetResourceAsync<ServiceIndexResourceV3>();
+            if (serviceIndex is null)
+            {
+                IsV3 = false;
+                _logger.LogWarning("The package source URL does not appear to be a V3 package source.");
+            }
+
             if (!SkipValidation && AlternateId is not null)
             {
                 _logger.LogDebug("Validating alternate package information.");
@@ -136,6 +151,13 @@ public class DeprecateCommand : Command
             if (!Overwrite)
             {
                 _logger.LogInformation("Reading the current deprecation information.");
+
+                if (!IsV3)
+                {
+                    _logger.LogError($"Deprecation information is only available on V3 package sources. Specify {OverwriteOption} to skip checking current deprecation information.");
+                    return 1;
+                }
+
                 await FilterOutDeprecatedVersionsAsync(versionsToDeprecate, sourceRepository, cacheContext, context.GetCancellationToken());
             }
 
@@ -180,7 +202,7 @@ public class DeprecateCommand : Command
         private async Task LogPackageDetailsUrlAsync(string version, SourceRepository sourceRepository)
         {
             var serviceIndex = await sourceRepository.GetResourceAsync<ServiceIndexResourceV3>();
-            var template = serviceIndex.GetServiceEntryUri(ServiceTypes.PackageDetailsUriTemplate);
+            var template = serviceIndex?.GetServiceEntryUri(ServiceTypes.PackageDetailsUriTemplate);
             if (template is not null)
             {
                 _logger.LogInformation("Check the package details page to view the change: {Url}",
@@ -253,7 +275,7 @@ public class DeprecateCommand : Command
 
             if (!All && (Version is null || Version.Count == 0) && (Range is null || Range.Count == 0))
             {
-                _logger.LogError($"You must specify a {VersionOption} option, {RangeOption}, or {All} in order to select to versions to deprecate.");
+                _logger.LogError($"You must specify a {VersionOption} option, {RangeOption}, or {AllOption} in order to select to versions to deprecate.");
                 return false;
             }
 
@@ -470,9 +492,10 @@ public class DeprecateCommand : Command
                 Message = Message,
                 AlternatePackageId = AlternateId,
                 AlternatePackageVersion = AlternateVersion,
+                Listed = Listed,
             };
 
-            if (await _service.DeprecateAsync(PackagePublishUrl!, Package_Id!, ApiKey, request, sourceRepository, token))
+            if (await _service.DeprecateAsync(PackagePublishUrl!, Package_Id!, ApiKey, request, Confirm, sourceRepository, token))
             {
                 _logger.LogInformation("Successfully marked {Count} package versions as deprecated.", versionsToDeprecate.Count);
                 return true;

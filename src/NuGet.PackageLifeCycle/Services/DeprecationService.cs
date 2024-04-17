@@ -29,6 +29,7 @@ public class DeprecationService
         string packageId,
         string? apiKey,
         DeprecationRequest request,
+        bool confirm,
         SourceRepository sourceRepository,
         CancellationToken token)
     {
@@ -42,6 +43,30 @@ public class DeprecationService
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             WriteIndented = true,
         });
+
+        if (confirm)
+        {
+            Console.WriteLine(
+                $"The deprecation request will be for package '{packageId}' and have the following content:" +
+                $"{Environment.NewLine}{Environment.NewLine}" +
+                $"{json}" +
+                $"{Environment.NewLine}");
+
+            var confirmed = false;
+            while (!confirmed)
+            {
+                Console.Write($"Do you want to proceed? (y/n) ");
+                var input = Console.ReadLine()?.Trim().ToLowerInvariant();
+                switch (input)
+                {
+                    case "y":
+                        confirmed = true;
+                        break;
+                    case "n":
+                        return false;
+                }
+            }
+        }
 
         var contentFactory = () => new StringContent(json, Encoding.UTF8, "application/json");
 

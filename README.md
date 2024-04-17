@@ -74,6 +74,11 @@ Options:
                                https://api.nuget.org/v3/index.json]
   --package-publish-url <url>  The URL to use for the PackagePublish resource. Defaults to
                                discovering it from the --source option.
+  --listed                     Set the listed status of the versions while deprecating. Use 'false'
+                               to unlist the versions, 'true' to relist them. If the option is not
+                               provided, it defaults to not changing the listed status at all.
+  --confirm                    Interactively confirm the contents of the deprecation API request
+                               before proceeding.
   --log-level <level>          The minimum log level to display. Possible values: Verbose, Debug,
                                Information, Warning, Error, Fatal [default: Information]
   -?, -h, --help               Show help and usage information

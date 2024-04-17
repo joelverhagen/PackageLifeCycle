@@ -24,4 +24,7 @@ public class DeprecationRequest
 
     [JsonPropertyName("message")]
     public string? Message { get; set; }
+
+    [JsonPropertyName("listed")]
+    public bool? Listed { get; set; }
 }

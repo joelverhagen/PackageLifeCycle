@@ -2,14 +2,14 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	
 	<PropertyGroup>
 		<PackageId>Knapcode.PackageLifeCycle</PackageId>
-		<Version>0.1.0-beta.2</Version>
+		<Version>0.1.0-beta.3</Version>
 		
 		<ToolCommandName>nuget-plc</ToolCommandName>
 		<PackAsTool>true</PackAsTool>
@@ -18,7 +18,13 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>A CLI tool to help you manage the lifecycle of published NuGet packages.</Description>
-		<PackageReleaseNotes>Initial release with support for the deprecate command.</PackageReleaseNotes>
+		<PackageReleaseNotes>
+			- Move to .NET 8
+			- Add --listed option to allow versions to be unlisted or relisted at the same time
+			- Add --confirm option to allow the user to confirm before submitting
+			- Require --overwrite when using a V2 package source
+			- Handle missing package details URL template resource
+		</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/joelverhagen/PackageLifeCycle</PackageProjectUrl>
 
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -36,14 +42,14 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="NuGet.Protocol" Version="6.6.0" />
+		<PackageReference Include="NuGet.Protocol" Version="6.9.1" />
 		<PackageReference Include="Serilog.Exceptions" Version="8.4.0" />
-		<PackageReference Include="Serilog.Extensions.Hosting" Version="7.0.0" />
-		<PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+		<PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
 		<PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.22272.1" />
 	</ItemGroup>
 

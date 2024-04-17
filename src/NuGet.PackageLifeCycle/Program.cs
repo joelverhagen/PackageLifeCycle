@@ -30,11 +30,13 @@ var runner = new CommandLineBuilder(new PackageLifeCycleCommand())
         })
         .UseCommandHandler<DeprecateCommand, DeprecateCommand.Handler>())
     .UseHelp()
+    .UseVersionOption()
+    .UseParseErrorReporting()
     .Build();
 
 if (args.Length == 0 || args.All(string.IsNullOrWhiteSpace))
 {
-    args = new[] { "--help" };
+    args = ["--help"];
 }
 
 return await runner.Parse(args).InvokeAsync();
