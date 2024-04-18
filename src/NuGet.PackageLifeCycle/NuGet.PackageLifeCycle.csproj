@@ -9,7 +9,7 @@
 	
 	<PropertyGroup>
 		<PackageId>Knapcode.PackageLifeCycle</PackageId>
-		<Version>0.1.0-beta.3</Version>
+		<Version>0.1.0-beta.4</Version>
 		
 		<ToolCommandName>nuget-plc</ToolCommandName>
 		<PackAsTool>true</PackAsTool>
@@ -19,11 +19,7 @@
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Description>A CLI tool to help you manage the lifecycle of published NuGet packages.</Description>
 		<PackageReleaseNotes>
-			- Move to .NET 8
-			- Add --listed option to allow versions to be unlisted or relisted at the same time
-			- Add --confirm option to allow the user to confirm before submitting
-			- Require --overwrite when using a V2 package source
-			- Handle missing package details URL template resource
+			- Change from --listed to --listed-verb
 		</PackageReleaseNotes>
 		<PackageProjectUrl>https://github.com/joelverhagen/PackageLifeCycle</PackageProjectUrl>
 

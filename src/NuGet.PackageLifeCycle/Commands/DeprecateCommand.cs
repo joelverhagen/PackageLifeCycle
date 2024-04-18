@@ -25,7 +25,7 @@ public class DeprecateCommand : Command
     public const string RangeOption = "--range";
     public const string SourceOption = "--source";
     public const string VersionOption = "--version";
-    public const string Listed = "--listed";
+    public const string ListedVerb = "--listed-verb";
     public const string Confirm = "--confirm";
 
     public DeprecateCommand() : base("deprecate", "Mark existing packages as deprecated.")
@@ -65,7 +65,7 @@ public class DeprecateCommand : Command
         {
             ArgumentHelpName = "url",
         });
-        AddOption(new Option<bool?>(Listed, "Set the listed status of the versions while deprecating. Use 'false' to unlist the versions, 'true' to relist them. If the option is not provided, it defaults to not changing the listed status at all."));
+        AddOption(new Option<bool?>(ListedVerb, $"Set the listed status of the versions while deprecating. Use '{PackageLifeCycle.ListedVerb.Unlist}' to unlist the versions, '{PackageLifeCycle.ListedVerb.Relist}' to relist them, or '{PackageLifeCycle.ListedVerb.Unchanged}' to leave the current listed status. Defaults to '{PackageLifeCycle.ListedVerb.Unchanged}'."));
         AddOption(new Option<bool>(Confirm, "Interactively confirm the contents of the deprecation API request before proceeding."));
 
     }
@@ -93,7 +93,7 @@ public class DeprecateCommand : Command
         public bool SkipValidation { get; set; }
         public string Source { get; set; } = "https://api.nuget.org/v3/index.json";
         public string? PackagePublishUrl { get; set; }
-        public bool? Listed { get; set; }
+        public ListedVerb ListedVerb { get; set; }
         public bool Confirm { get; set; }
         private bool IsV3 { get; set; } = true;
 
@@ -492,7 +492,7 @@ public class DeprecateCommand : Command
                 Message = Message,
                 AlternatePackageId = AlternateId,
                 AlternatePackageVersion = AlternateVersion,
-                Listed = Listed,
+                ListedVerb = ListedVerb,
             };
 
             if (await _service.DeprecateAsync(PackagePublishUrl!, Package_Id!, ApiKey, request, Confirm, sourceRepository, token))

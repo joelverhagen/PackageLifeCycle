@@ -2,6 +2,13 @@
 
 namespace NuGet.PackageLifeCycle;
 
+public enum ListedVerb
+{
+    Unchanged,
+    Unlist,
+    Relist,
+}
+
 public class DeprecationRequest
 {
     [JsonPropertyName("versions")]
@@ -25,6 +32,7 @@ public class DeprecationRequest
     [JsonPropertyName("message")]
     public string? Message { get; set; }
 
-    [JsonPropertyName("listed")]
-    public bool? Listed { get; set; }
+    [JsonPropertyName("listedVerb")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public ListedVerb ListedVerb { get; set; }
 }
