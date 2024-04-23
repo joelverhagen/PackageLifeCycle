@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using NuGet.Configuration;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
@@ -20,12 +21,12 @@ public class DeprecateCommand : Command
     public const string MessageOption = "--message";
     public const string OtherReasonOption = "--other-reason";
     public const string OverwriteOption = "--overwrite";
-    public const string SkipValidation = "--skip-validation";
+    public const string SkipValidationOption = "--skip-validation";
     public const string PackagePublishUrlOption = "--package-publish-url";
     public const string RangeOption = "--range";
     public const string SourceOption = "--source";
     public const string VersionOption = "--version";
-    public const string ListedVerb = "--listed-verb";
+    public const string ListedVerbOption = "--listed-verb";
     public const string Confirm = "--confirm";
 
     public DeprecateCommand() : base("deprecate", "Mark existing packages as deprecated.")
@@ -59,13 +60,13 @@ public class DeprecateCommand : Command
         AddOption(new Option<bool>(DryRunOption, "Runs the entire operation without actually submitting the deprecation request."));
         AddOption(new Option<bool>(OverwriteOption, "Replace existing deprecation metadata on a package version."));
         AddOption(new Option<bool>(AllowMissingVersionsOption, "Allow deprecating versions that are not yet available on the source."));
-        AddOption(new Option<bool>(SkipValidation, $"Skip as much validation as possible before submitting the request."));
+        AddOption(new Option<bool>(SkipValidationOption, $"Skip as much validation as possible before submitting the request. Automatically enables the {AllowMissingVersionsOption} and {OverwriteOption} options."));
         AddOption(new Option<string>(SourceOption, () => "https://api.nuget.org/v3/index.json", "The package source to use."));
-        AddOption(new Option<string>(PackagePublishUrlOption, $"The URL to use for the PackagePublish resource. Defaults to discovering it from the {SourceOption} option.")
+        AddOption(new Option<string>(PackagePublishUrlOption, $"The URL to use for the PackagePublish resource. For V2 package sources, you may need to provide {PackagePublishUrlOption} as well. [default: discovered via {SourceOption} option for a V3 feed and uses a '/package' convention on a V2 feed]")
         {
             ArgumentHelpName = "url",
         });
-        AddOption(new Option<bool?>(ListedVerb, $"Set the listed status of the versions while deprecating. Use '{PackageLifeCycle.ListedVerb.Unlist}' to unlist the versions, '{PackageLifeCycle.ListedVerb.Relist}' to relist them, or '{PackageLifeCycle.ListedVerb.Unchanged}' to leave the current listed status. Defaults to '{PackageLifeCycle.ListedVerb.Unchanged}'."));
+        AddOption(new Option<bool?>(ListedVerbOption, $"Set the listed status of the versions while deprecating. Use {ListedVerb.Unlist} to unlist the versions, {ListedVerb.Relist} to relist them, or {ListedVerb.Unchanged} to leave the current listed status. [default: {ListedVerb.Unchanged}]"));
         AddOption(new Option<bool>(Confirm, "Interactively confirm the contents of the deprecation API request before proceeding."));
 
     }
@@ -113,7 +114,7 @@ public class DeprecateCommand : Command
         {
             if (Package_Id is null)
             {
-                _logger.LogError("No package ID was provided.");
+                _logger.LogCritical("No package ID was provided.");
                 return 1;
             }
 
@@ -122,14 +123,31 @@ public class DeprecateCommand : Command
                 return 1;
             }
 
+            if (SkipValidation)
+            {
+                AllowMissingVersions = true;
+                Overwrite = true;
+            }
+
             using var cacheContext = new SourceCacheContext { MaxAge = DateTimeOffset.Now };
             var sourceRepository = Repository.Factory.GetCoreV3(Source);
 
             var serviceIndex = await sourceRepository.GetResourceAsync<ServiceIndexResourceV3>();
             if (serviceIndex is null)
             {
+                var feedType = FeedTypeUtility.GetFeedType(new PackageSource(Source));
+                switch (feedType)
+                {
+                    case FeedType.HttpV2:
+                    case FeedType.HttpV3:
+                        break;
+                    default:
+                        _logger.LogCritical("The package source URL {Source} does not appear to be an HTTP V2 or V3 feed. It was detected as type {Type}. Unable to continue.", Source, feedType);
+                        return 1;
+                }
+
                 IsV3 = false;
-                _logger.LogWarning("The package source URL does not appear to be a V3 package source.");
+                _logger.LogInformation("The package source URL {Source} does not appear to be a V3 package source. Some behavior may be limited.", Source);
             }
 
             if (!SkipValidation && AlternateId is not null)
@@ -141,7 +159,6 @@ public class DeprecateCommand : Command
                 }
             }
 
-            _logger.LogInformation("Reading the version list for {Id} on {Source}.", Package_Id, Source);
             var versionsToDeprecate = await GetMatchingVersionsAsync(sourceRepository, cacheContext, context.GetCancellationToken());
             if (versionsToDeprecate is null)
             {
@@ -154,7 +171,7 @@ public class DeprecateCommand : Command
 
                 if (!IsV3)
                 {
-                    _logger.LogError($"Deprecation information is only available on V3 package sources. Specify {OverwriteOption} to skip checking current deprecation information.");
+                    _logger.LogCritical($"Deprecation information is only available on V3 package sources. Specify {OverwriteOption} to skip checking current deprecation information.");
                     return 1;
                 }
 
@@ -171,13 +188,10 @@ public class DeprecateCommand : Command
                 _logger.LogInformation("{Count} versions will be marked as deprecated.", versionsToDeprecate.Count);
             }
 
+            PackagePublishUrl = await GetPackagePublishUrlAsync(sourceRepository);
             if (PackagePublishUrl is null)
             {
-                PackagePublishUrl = await GetPackagePublishUrlAsync(sourceRepository);
-                if (PackagePublishUrl is null)
-                {
-                    return 1;
-                }
+                return 1;
             }
 
             _logger.LogInformation("Submitting the deprecation request for {Id} to {PackagePublishUrl}.", Package_Id, PackagePublishUrl);
@@ -212,12 +226,36 @@ public class DeprecateCommand : Command
 
         private async Task<string?> GetPackagePublishUrlAsync(SourceRepository sourceRepository)
         {
+            if (!IsV3)
+            {
+                if (PackagePublishUrl is null)
+                {
+                    // take the behavior that NuGetGallery has.
+                    // {root}/api/v2 is the V2 feed URL
+                    // {root}/api/v2/package is the package publish URL 
+                    var packagePublishUrl = Source.TrimEnd('/') + "/package";
+                    _logger.LogWarning($"A V3 package {SourceOption} was not provided so no PackagePublish resource could be discovered. The package publish URL is defaulting to {{PackagePublishUrl}}. If this is wrong, use the {PackagePublishUrlOption} option.", packagePublishUrl);
+                    return packagePublishUrl;
+                }
+
+                return PackagePublishUrl;
+            }
+
             var serviceIndex = await sourceRepository.GetResourceAsync<ServiceIndexResourceV3>();
             var publishUri = serviceIndex.GetServiceEntryUri(ServiceTypes.PackagePublish);
             if (publishUri is null)
             {
-                _logger.LogError($"No PackagePublish resource was found in the service index. Try providing the {PackagePublishUrlOption} directly, if you know it.");
+                _logger.LogCritical($"No PackagePublish resource was found in the service index. You must provide the {PackagePublishUrlOption} directly or ask the package source maintainer to add it to the service index.");
                 return null;
+            }
+
+            if (PackagePublishUrl is not null && publishUri.AbsoluteUri != PackagePublishUrl)
+            {
+                _logger.LogWarning(
+                    "The PackagePublish URL found in the service index ({Found}) is different from the provided one ({Provided}). Continuing with the provided value.",
+                    publishUri.AbsoluteUri,
+                    PackagePublishUrl);
+                return PackagePublishUrl;
             }
 
             return publishUri.AbsoluteUri;
@@ -231,7 +269,7 @@ public class DeprecateCommand : Command
                 {
                     if (!NuGetVersion.TryParse(version, out _))
                     {
-                        _logger.LogError($"The {VersionOption} '{{Version}}' is not a valid version string.", version);
+                        _logger.LogCritical($"The {VersionOption} {{Version}} is not a valid version string.", version);
                         return false;
                     }
                 }
@@ -243,7 +281,7 @@ public class DeprecateCommand : Command
                 {
                     if (!VersionRange.TryParse(range, out _))
                     {
-                        _logger.LogError($"The {RangeOption} '{Range}' is not a valid version range.", range);
+                        _logger.LogCritical($"The {RangeOption} {{Range}} is not a valid version range.", range);
                         return false;
                     }
                 }
@@ -257,25 +295,25 @@ public class DeprecateCommand : Command
 
             if (OtherReason && string.IsNullOrWhiteSpace(Message))
             {
-                _logger.LogError($"No message was provided but deprecation reason {OtherReasonOption} is being used.");
+                _logger.LogCritical($"No message was provided but deprecation reason {OtherReasonOption} is being used.");
                 return false;
             }
 
             if (AlternateVersion is not null && !NuGetVersion.TryParse(AlternateVersion, out _))
             {
-                _logger.LogError($"The {AlternateVersionOption} '{{AlternateVersion}}' is not a valid version string.", AlternateVersion);
+                _logger.LogCritical($"The {AlternateVersionOption} {{AlternateVersion}} is not a valid version string.", AlternateVersion);
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(ApiKey) && (IsNuGetOrg(PackagePublishUrl, out var host) || IsNuGetOrg(Source, out host)))
             {
-                _logger.LogError($"An {ApiKeyOption} is required when deprecating packages on {{Host}}.", host);
+                _logger.LogCritical($"An {ApiKeyOption} is required when deprecating packages on {{Host}}.", host);
                 return false;
             }
 
             if (!All && (Version is null || Version.Count == 0) && (Range is null || Range.Count == 0))
             {
-                _logger.LogError($"You must specify a {VersionOption} option, {RangeOption}, or {AllOption} in order to select to versions to deprecate.");
+                _logger.LogCritical($"You must specify a {VersionOption} option, {RangeOption}, or {AllOption} in order to select to versions to deprecate.");
                 return false;
             }
 
@@ -284,12 +322,11 @@ public class DeprecateCommand : Command
 
         private async Task<bool> IsAlternatePackageValidAsync(SourceRepository sourceRepository, SourceCacheContext cacheContext, CancellationToken token)
         {
-            var findPackageByIdResource = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(token);
-            var versions = await findPackageByIdResource.GetAllVersionsAsync(AlternateId, cacheContext, _httpLogger, token);
+            IEnumerable<NuGetVersion>? versions = await GetVersionsAsync(sourceRepository, cacheContext, AlternateId!, token);
 
             if (versions is null || !versions.Any())
             {
-                _logger.LogError("The alternate package {Id} does not exist.", AlternateId);
+                _logger.LogCritical("The alternate package {Id} does not exist.", AlternateId);
                 return false;
             }
 
@@ -298,7 +335,7 @@ public class DeprecateCommand : Command
                 var parsedVersion = NuGetVersion.Parse(AlternateVersion);
                 if (!versions.Contains(parsedVersion))
                 {
-                    _logger.LogError("The version {Version} for alternate package {Id} does not exist.", AlternateVersion, AlternateId);
+                    _logger.LogCritical("The version {Version} for alternate package {Id} does not exist.", AlternateVersion, AlternateId);
                 }
             }
 
@@ -307,15 +344,23 @@ public class DeprecateCommand : Command
 
         private async Task<List<string>?> GetMatchingVersionsAsync(SourceRepository sourceRepository, SourceCacheContext cacheContext, CancellationToken token)
         {
-            var findPackageByIdResource = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(token);
-            var versions = await findPackageByIdResource.GetAllVersionsAsync(Package_Id, cacheContext, _httpLogger, token);
-            var remainingVersions = versions.ToHashSet();
+            HashSet<NuGetVersion> remainingVersions;
+            if (!SkipValidation || All || (Range is not null && Range.Count > 0))
+            {
+                _logger.LogInformation($"Reading the version list for {{Id}} on {{Source}} (can be skipped using {SkipValidationOption} and {VersionOption}).", Package_Id, Source);
+                var versions = await GetVersionsAsync(sourceRepository, cacheContext, Package_Id!, token);
+                remainingVersions = versions.ToHashSet();
+            }
+            else
+            {
+                remainingVersions = new HashSet<NuGetVersion>();
+            }
 
             if (remainingVersions.Count == 0)
             {
                 if (!AllowMissingVersions)
                 {
-                    _logger.LogError($"No versions were found for package {{Id}}. If the package is not yet available on the package source, you can try {AllowMissingVersionsOption} and providing explicit {VersionOption} options.", Package_Id);
+                    _logger.LogCritical($"No versions were found for package {{Id}}. If the package is not yet available on the package source, you can try {AllowMissingVersionsOption} and providing explicit {VersionOption} options.", Package_Id);
                     return null;
                 }
             }
@@ -345,7 +390,7 @@ public class DeprecateCommand : Command
                 {
                     if (VersionRange.TryParse(range, out var parsedRange))
                     {
-                        var filter = ($"{RangeOption} '{{Range}}'", range, true);
+                        var filter = ($"{RangeOption} {{Range}}", range, true);
                         var matchingVersions = remainingVersions.Where(parsedRange.Satisfies).ToList();
                         remainingVersions.ExceptWith(matchingVersions);
                         foreach (var version in matchingVersions)
@@ -358,7 +403,10 @@ public class DeprecateCommand : Command
                             unusedFilters.Add(filter);
                         }
                     }
-
+                    else
+                    {
+                        _logger.LogDebug("Version range {Range} could not be parsed and will be skipped.", range);
+                    }
                 }
             }
 
@@ -369,7 +417,7 @@ public class DeprecateCommand : Command
                     if (NuGetVersion.TryParse(version, out var parsedVersion))
                     {
                         var matched = remainingVersions.Remove(parsedVersion);
-                        var filter = ($"{VersionOption} '{{Version}}'", version, matched);
+                        var filter = ($"{VersionOption} {{Version}}", version, matched);
                         if (matched || AllowMissingVersions)
                         {
                             versionsToDeprecate.Add((version, filter));
@@ -381,7 +429,11 @@ public class DeprecateCommand : Command
                     }
                     else if (SkipValidation)
                     {
-                        versionsToDeprecate.Add((version, ($"{VersionOption} '{{Version}}'", version, false)));
+                        versionsToDeprecate.Add((version, ($"{VersionOption} {{Version}}", version, false)));
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Version {Range} could not be parsed and will be skipped.", version);
                     }
                 }
             }
@@ -405,10 +457,10 @@ public class DeprecateCommand : Command
 
             foreach (var filter in unusedFilters)
             {
-               if (!filter.Display)
-               {
-                   continue;
-               }
+                if (!filter.Display)
+                {
+                    continue;
+                }
 
                 if (filter.Value is not null)
                 {
@@ -442,6 +494,21 @@ public class DeprecateCommand : Command
                 .ThenBy(x => x.String, StringComparer.OrdinalIgnoreCase)
                 .Select(x => x.String)
                 .ToList();
+        }
+
+        private async Task<IEnumerable<NuGetVersion>> GetVersionsAsync(SourceRepository sourceRepository, SourceCacheContext cacheContext, string id, CancellationToken token)
+        {
+            try
+            {
+                var findPackageByIdResource = await sourceRepository.GetResourceAsync<FindPackageByIdResource>(token);
+                var versions = await findPackageByIdResource.GetAllVersionsAsync(id, cacheContext, _httpLogger, token);
+                return versions;
+            }
+            catch (FatalProtocolException)
+            {
+                _logger.LogCritical($"Are you sure you provided a valid NuGet package source URL for the {SourceOption} option? If it is a V2 feed URL, you may need to specify {PackagePublishUrlOption} in addition to {SourceOption}.");
+                throw;
+            }
         }
 
         private async Task FilterOutDeprecatedVersionsAsync(List<string> versionsToDeprecate, SourceRepository sourceRepository, SourceCacheContext cacheContext, CancellationToken token)
