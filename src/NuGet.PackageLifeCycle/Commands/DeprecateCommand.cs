@@ -241,12 +241,21 @@ public class DeprecateCommand : Command
                 return PackagePublishUrl;
             }
 
+            const string firstTypeWithDeprecate = "PackagePublish/3.0.0-preview.1";
             var serviceIndex = await sourceRepository.GetResourceAsync<ServiceIndexResourceV3>();
-            var publishUri = serviceIndex.GetServiceEntryUri(ServiceTypes.PackagePublish);
+            var publishUri = serviceIndex.GetServiceEntryUri(firstTypeWithDeprecate);
             if (publishUri is null)
             {
-                _logger.LogCritical($"No PackagePublish resource was found in the service index. You must provide the {PackagePublishUrlOption} directly or ask the package source maintainer to add it to the service index.");
-                return null;
+                publishUri = serviceIndex.GetServiceEntryUri(ServiceTypes.PackagePublish);
+                if (publishUri is null)
+                {
+                    _logger.LogCritical($"No PackagePublish resource was found in the service index. You must provide the {PackagePublishUrlOption} directly or ask the package source maintainer to add it to the service index.");
+                    return null;
+                }
+
+                _logger.LogWarning(
+                    "The PackagePublish resource found in the service index did not have the expected resource type (expected is {Type}). The deprecation may not work as expected.",
+                    firstTypeWithDeprecate);
             }
 
             if (PackagePublishUrl is not null && publishUri.AbsoluteUri != PackagePublishUrl)
