@@ -14,21 +14,22 @@ jobs:
         os:
           - windows-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
+
     - name: Restore dependencies
       run: dotnet restore
+
     - name: Build
       run: dotnet build --no-restore --configuration Release
+
     - name: Pack
       run: dotnet pack --output artifacts --no-restore --no-build --configuration Release
-    - uses: actions/upload-artifact@v3
-      with:
-        name: ${{ matrix.os }}-artifacts
-        path: artifacts/
 
     - name: Azure login
       uses: azure/login@v2
@@ -38,8 +39,29 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     - name: Download Sign CLI
-      run: az storage blob download --blob-url ${{ secrets.SIGN_CLI_ZIP }} --auth-mode login --file bin/Sign.Cli.zip
+      run: |
+        mkdir bin
+        az storage blob download --blob-url ${{ secrets.SIGN_CLI_ZIP }} --auth-mode login --file bin/Sign.Cli.zip
     
-    - name: Unzip Sign Cli
+    - name: Unzip Sign CLI
       shell: pwsh
       run: Expand-Archive -Force bin/Sign.Cli.zip bin/Sign.Cli
+    
+    - name: Run Sign CLI
+      shell: pwsh
+      run: |
+        & "bin\Sign.Cli\sign.exe" code azcodesign artifacts\* `
+          -acsu "${{ secrets.TRUSTED_SIGNING_ENDPOINT }}" `
+          -acsa "${{ secrets.TRUSTED_SIGNING_ACCOUNT }}" `
+          -acscp "${{ secrets.TRUSTED_SIGNING_PROFILE }}" `
+          -v "Debug" `
+          -d "Knapcode.PackageLifeCycle" `
+          -u "https://www.nuget.org/packages/Knapcode.PackageLifeCycle" `
+          --azcodesign-managed-identity `
+          --file-list sign-file-list.txt
+
+    - uses: actions/upload-artifact@v3
+      name: Upload artifacts
+      with:
+        name: ${{ matrix.os }}-artifacts
+        path: artifacts/
