@@ -59,6 +59,13 @@ jobs:
           -u "https://www.nuget.org/packages/Knapcode.PackageLifeCycle" `
           --azcodesign-managed-identity `
           --file-list sign-file-list.txt
+    
+    - name: Extract .cer file
+      shell: pwsh
+      run: |
+        dotnet tool install --global Knapcode.CertificateExtractor
+        $nupkg = gci artifacts\*.nupkg
+        nuget-cert-extractor --file $nupkg --output artifacts --code-signing --author --leaf
 
     - uses: actions/upload-artifact@v3
       name: Upload artifacts
