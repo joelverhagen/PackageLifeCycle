@@ -2,6 +2,10 @@ name: Build
 
 on: [push, pull_request, workflow_dispatch]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -25,3 +29,17 @@ jobs:
       with:
         name: ${{ matrix.os }}-artifacts
         path: artifacts/
+
+    - name: Azure login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Download Sign CLI
+      run: az storage blob download --blob-url ${{ secrets.SIGN_CLI_ZIP }} --auth-mode login --file bin/Sign.Cli.zip
+    
+    - name: Unzip Sign Cli
+      shell: pwsh
+      run: Expand-Archive -Force bin/Sign.Cli.zip bin/Sign.Cli
