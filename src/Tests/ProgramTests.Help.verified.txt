@@ -1,0 +1,14 @@
+﻿Description:
+  A CLI tool to help you manage the lifecycle of published NuGet packages.
+
+Usage:
+  nuget-plc [command] [options]
+
+Options:
+  --log-level <level>  The minimum log level to display. Possible values: Verbose, Debug, Information, Warning, Error, Fatal [default: Information]
+  -?, -h, --help       Show help and usage information
+  --version            Show version information
+
+Commands:
+  deprecate <PACKAGE_ID>  Mark existing packages as deprecated.
+

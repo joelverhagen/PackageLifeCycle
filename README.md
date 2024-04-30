@@ -40,46 +40,22 @@ nuget-plc deprecate jQuery --all --legacy
 
 ### Help text
 
-```plaintext
+<!-- snippet: ProgramTests.Help.verified.txt -->
+<a id='snippet-ProgramTests.Help.verified.txt'></a>
+```txt
 Description:
-  Mark existing packages as deprecated.
+  A CLI tool to help you manage the lifecycle of published NuGet packages.
 
 Usage:
-  nuget-plc deprecate <PACKAGE_ID> [options]
-
-Arguments:
-  <PACKAGE_ID>  The ID of the package that should be deprecated.
+  nuget-plc [command] [options]
 
 Options:
-  --version <version>          A specific version to mark as deprecated (multiple allowed).
-  --range <range>              A range of versions to mark as deprecated (multiple allowed).
-  --all                        Deprecate all versions.
-  --api-key <api-key>          The API key to use when deprecating the package.
-  --legacy                     Mark the deprecated versions as legacy.
-  --critical-bugs              Mark the deprecated versions as having critical bugs.
-  --other-reason               Mark the deprecated versions as having some other deprecation
-                               reason. Enabled by default if no other deprecation reason is
-                               selected.
-  --message <message>          A deprecation message to display. Required if --other-reason is
-                               specified or no other deprecation reason is selected.
-  --alternate-id <id>          An alternate package ID to recommend instead of this package.
-  --alternate-version <ver>    A specific alternate package version to recommend. Only usable with
-                               --alternate-id.
-  --dry-run                    Runs the entire operation without actually submitting the
-                               deprecation request.
-  --overwrite                  Replace existing deprecation metadata on a package version.
-  --allow-missing-versions     Allow deprecating versions that are not yet available on the source.
-  --skip-validation            Skip as much validation as possible before submitting the request.
-  --source <source>            The package source to use. [default:
-                               https://api.nuget.org/v3/index.json]
-  --package-publish-url <url>  The URL to use for the PackagePublish resource. Defaults to
-                               discovering it from the --source option.
-  --listed                     Set the listed status of the versions while deprecating. Use 'false'
-                               to unlist the versions, 'true' to relist them. If the option is not
-                               provided, it defaults to not changing the listed status at all.
-  --confirm                    Interactively confirm the contents of the deprecation API request
-                               before proceeding.
-  --log-level <level>          The minimum log level to display. Possible values: Verbose, Debug,
-                               Information, Warning, Error, Fatal [default: Information]
-  -?, -h, --help               Show help and usage information
+  --log-level <level>  The minimum log level to display. Possible values: Verbose, Debug, Information, Warning, Error, Fatal [default: Information]
+  -?, -h, --help       Show help and usage information
+  --version            Show version information
+
+Commands:
+  deprecate <PACKAGE_ID>  Mark existing packages as deprecated.
 ```
+<sup><a href='/src/Tests/ProgramTests.Help.verified.txt#L1-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-ProgramTests.Help.verified.txt' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
