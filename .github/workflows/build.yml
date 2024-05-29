@@ -72,3 +72,10 @@ jobs:
       with:
         name: ${{ matrix.os }}-artifacts
         path: artifacts/
+    - name: Upload Test Results
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: verify-test-results
+        path: |
+          **/*.received.*
