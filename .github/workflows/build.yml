@@ -35,6 +35,12 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
+      - name: Test
+        run: dotnet test --no-restore --no-build --configuration Release
+
+      - name: Verify formatted
+        run: dotnet format --verify-no-changes
+
       - name: Pack
         run: dotnet pack --output artifacts --no-restore --no-build --configuration Release
 
