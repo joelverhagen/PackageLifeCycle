@@ -1,4 +1,4 @@
-﻿Description:
+Description:
   Mark existing packages as deprecated.
 
 Usage:

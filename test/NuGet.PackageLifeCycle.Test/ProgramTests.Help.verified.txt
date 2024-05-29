@@ -1,4 +1,4 @@
-﻿Description:
+Description:
   A CLI tool to help you manage the lifecycle of published NuGet packages.
 
 Usage:

@@ -31,7 +31,7 @@ Options:
 Commands:
   deprecate <PACKAGE_ID>  Mark existing packages as deprecated.
 ```
-<sup><a href='/src/Tests/ProgramTests.Help.verified.txt#L1-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-ProgramTests.Help.verified.txt' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/test/NuGet.PackageLifeCycle.Test/ProgramTests.Help.verified.txt#L1-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-ProgramTests.Help.verified.txt' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Deprecate
@@ -58,6 +58,12 @@ Mark all versions as legacy.
 
 ```console
 nuget-plc deprecate jQuery --all --legacy
+```
+
+Mark all versions as legacy and unlist them at the same time.
+
+```console
+nuget-plc deprecate jQuery --all --legacy --listed-verb Unlist
 ```
 
 ### Help text
@@ -96,5 +102,5 @@ Options:
   --log-level <level>          The minimum log level to display. Possible values: Verbose, Debug, Information, Warning, Error, Fatal [default: Information]
   -?, -h, --help               Show help and usage information
 ```
-<sup><a href='/src/Tests/ProgramTests.Help_deprecate.verified.txt#L1-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-ProgramTests.Help_deprecate.verified.txt' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/test/NuGet.PackageLifeCycle.Test/ProgramTests.Help_deprecate.verified.txt#L1-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-ProgramTests.Help_deprecate.verified.txt' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
