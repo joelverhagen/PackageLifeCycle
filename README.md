@@ -102,5 +102,5 @@ Options:
   --log-level <level>          The minimum log level to display. Possible values: Verbose, Debug, Information, Warning, Error, Fatal [default: Information]
   -?, -h, --help               Show help and usage information
 ```
-<sup><a href='/test/NuGet.PackageLifeCycle.Test/ProgramTests.Help_deprecate.verified.txt#L1-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-ProgramTests.Help_deprecate.verified.txt' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/test/NuGet.PackageLifeCycle.Test/ProgramTests.Help_Deprecate.verified.txt#L1-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-ProgramTests.Help_deprecate.verified.txt' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
