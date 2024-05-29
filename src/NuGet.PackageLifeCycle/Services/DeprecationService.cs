@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
-using NuGet.Protocol;
-using NuGet.Protocol.Core.Types;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
+using NuGet.Protocol;
+using NuGet.Protocol.Core.Types;
 
 namespace NuGet.PackageLifeCycle;
 
@@ -137,7 +137,7 @@ public class DeprecationService
 
             return false;
         }
-        
+
     }
 
     private async Task<string> GetHttpSessionStringAsync(HttpResponseMessage response, HttpContent? requestContentOverride)

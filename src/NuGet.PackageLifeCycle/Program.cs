@@ -1,12 +1,12 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using NuGet.Protocol.Core.Types;
-using Serilog;
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using NuGet.Protocol.Core.Types;
+using Serilog;
 
 namespace NuGet.PackageLifeCycle;
 

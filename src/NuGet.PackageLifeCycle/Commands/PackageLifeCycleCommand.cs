@@ -1,5 +1,5 @@
-﻿using Serilog.Events;
 using System.CommandLine;
+using Serilog.Events;
 
 namespace NuGet.PackageLifeCycle;
 

@@ -1,4 +1,4 @@
-﻿using NuGet.Common;
+using NuGet.Common;
 using StandardLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace NuGet.PackageLifeCycle;

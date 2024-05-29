@@ -1,10 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+using System.CommandLine;
+using System.CommandLine.Invocation;
+using Microsoft.Extensions.Logging;
 using NuGet.Configuration;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
 using NuGet.Versioning;
-using System.CommandLine;
-using System.CommandLine.Invocation;
 
 namespace NuGet.PackageLifeCycle;
 

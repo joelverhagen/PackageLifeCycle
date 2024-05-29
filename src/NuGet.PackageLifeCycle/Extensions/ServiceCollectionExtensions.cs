@@ -1,8 +1,8 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using System.CommandLine.Parsing;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
-using System.CommandLine.Parsing;
 
 public static class ServiceCollectionExtensions
 {
