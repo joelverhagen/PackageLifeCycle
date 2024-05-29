@@ -118,6 +118,12 @@ public class DeprecateCommand : Command
                 return 1;
             }
 
+            if (!Legacy && !CriticalBugs && !OtherReason)
+            {
+                OtherReason = true;
+                _logger.LogInformation($"Defaulting to deprecation reason {OtherReasonOption} since no other deprecation reason was provided.");
+            }
+
             if (!SkipValidation && !AreArgumentsValid())
             {
                 return 1;
@@ -294,12 +300,6 @@ public class DeprecateCommand : Command
                         return false;
                     }
                 }
-            }
-
-            if (!Legacy && !CriticalBugs && !OtherReason)
-            {
-                OtherReason = true;
-                _logger.LogDebug($"Defaulting to deprecation reason {OtherReasonOption} since no other deprecation reason was provided.");
             }
 
             if (OtherReason && string.IsNullOrWhiteSpace(Message))
